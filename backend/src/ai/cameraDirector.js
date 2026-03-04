@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const SYSTEM_PROMPT = `You are an intelligent podcast camera director for a live recording session.
 
@@ -24,40 +24,37 @@ const recentHistory = [];
 const MAX_HISTORY_PAIRS = 5;
 
 export async function analyzeAudioForCameraSwitch(audioLevels, currentScene) {
-  const userMessage = {
-    role: 'user',
-    content: JSON.stringify({
-      timestamp: new Date().toISOString(),
-      currentScene,
-      audioLevels,
-      recentSwitches: recentHistory
-        .filter((m) => m.role === 'assistant')
-        .slice(-3)
-        .map((m) => {
-          try {
-            return JSON.parse(m.content);
-          } catch {
-            return m.content;
-          }
-        }),
-    }),
-  };
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    systemInstruction: SYSTEM_PROMPT,
+  });
+
+  const userContent = JSON.stringify({
+    timestamp: new Date().toISOString(),
+    currentScene,
+    audioLevels,
+    recentSwitches: recentHistory
+      .filter((m) => m.role === 'model')
+      .slice(-3)
+      .map((m) => {
+        try { return JSON.parse(m.parts[0].text); } catch { return m.parts[0].text; }
+      }),
+  });
+
+  // Build Gemini history format (role must be 'user' or 'model')
+  const history = recentHistory.slice(-(MAX_HISTORY_PAIRS * 2));
 
   try {
-    const messages = [...recentHistory.slice(-(MAX_HISTORY_PAIRS * 2)), userMessage];
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessage(userContent);
+    const rawText = result.response.text().trim();
 
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 256,
-      system: SYSTEM_PROMPT,
-      messages,
-    });
+    // Strip markdown code fences if Gemini wraps the JSON
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    const decision = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);
 
-    const rawText = response.content[0].text.trim();
-    const decision = JSON.parse(rawText);
-
-    recentHistory.push(userMessage);
-    recentHistory.push({ role: 'assistant', content: rawText });
+    recentHistory.push({ role: 'user', parts: [{ text: userContent }] });
+    recentHistory.push({ role: 'model', parts: [{ text: JSON.stringify(decision) }] });
 
     if (recentHistory.length > MAX_HISTORY_PAIRS * 2 + 2) {
       recentHistory.splice(0, 2);
