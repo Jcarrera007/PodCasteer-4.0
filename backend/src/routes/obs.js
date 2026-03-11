@@ -47,8 +47,35 @@ router.post('/scenes/current', async (req, res) => {
 
 router.get('/sources', async (req, res) => {
   try {
+    // GetInputList gives all global inputs
     const { inputs } = await obs.call('GetInputList');
-    res.json({ sources: inputs });
+
+    // Also walk every scene to catch inputs that only exist inside a scene
+    const { scenes } = await obs.call('GetSceneList');
+    const extraInputNames = new Set(inputs.map((i) => i.inputName));
+    const extraInputs = [];
+
+    await Promise.all(
+      scenes.map(async (scene) => {
+        try {
+          const { sceneItems } = await obs.call('GetSceneItemList', {
+            sceneName: scene.sceneName,
+          });
+          for (const item of sceneItems) {
+            if (item.inputKind && !extraInputNames.has(item.sourceName)) {
+              extraInputNames.add(item.sourceName);
+              extraInputs.push({
+                inputName: item.sourceName,
+                inputKind: item.inputKind,
+                unversionedInputKind: item.inputKind,
+              });
+            }
+          }
+        } catch {}
+      })
+    );
+
+    res.json({ sources: [...inputs, ...extraInputs] });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

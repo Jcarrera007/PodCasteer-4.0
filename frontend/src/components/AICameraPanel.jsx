@@ -8,8 +8,10 @@ export default function AICameraPanel() {
     aiEnabled, aiMode, aiAutoSwitch,
     audioSensitivity, micAssignments, scenes, currentScene,
     obsAudioLevels, claudeDecisionLog, sources,
+    wideAngleScene,
     setAiEnabled, setAiMode, setAiAutoSwitch,
     setAudioSensitivity, setMicAssignment, removeMicAssignment,
+    setWideAngleScene,
   } = useObsStore();
 
   const { switchScene, analyzeAudio } = useOBS();
@@ -19,11 +21,13 @@ export default function AICameraPanel() {
   const assignRef = useRef(micAssignments);
   const sceneRef = useRef(currentScene);
   const sensitivityRef = useRef(audioSensitivity);
+  const wideAngleRef = useRef(wideAngleScene);
 
   useEffect(() => { levelsRef.current = obsAudioLevels; }, [obsAudioLevels]);
   useEffect(() => { assignRef.current = micAssignments; }, [micAssignments]);
   useEffect(() => { sceneRef.current = currentScene; }, [currentScene]);
   useEffect(() => { sensitivityRef.current = audioSensitivity; }, [audioSensitivity]);
+  useEffect(() => { wideAngleRef.current = wideAngleScene; }, [wideAngleScene]);
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
@@ -42,6 +46,14 @@ export default function AICameraPanel() {
           ([name, level]) => level > threshold && assignments[name]
         );
         if (active.length === 0) return;
+
+        // Multiple speakers → wide angle scene
+        const wide = wideAngleRef.current;
+        if (active.length >= 2 && wide) {
+          if (wide !== scene) switchScene(wide);
+          return;
+        }
+
         active.sort((a, b) => b[1] - a[1]);
         const targetScene = assignments[active[0][0]];
         if (targetScene && targetScene !== scene) {
@@ -59,8 +71,21 @@ export default function AICameraPanel() {
     return () => clearInterval(intervalRef.current);
   }, [aiEnabled, aiMode]);
 
-  // Show all OBS inputs; meter data fills in when InputVolumeMeters events arrive
-  const audioInputs = sources;
+  // Video capture kinds — exclude from mic list (they're cameras, not mics)
+  const VIDEO_KINDS = new Set([
+    'dshow_input', 'av_capture_input', 'v4l2_input',
+    'window_capture', 'monitor_capture', 'display_capture',
+    'game_capture', 'browser_source', 'image_source',
+    'color_source', 'text_gdiplus', 'text_ft2_source_v2', 'scene',
+  ]);
+
+  const seen = new Set();
+  const audioInputs = sources.filter((s) => {
+    if (VIDEO_KINDS.has(s.inputKind)) return false;
+    if (seen.has(s.inputName)) return false;
+    seen.add(s.inputName);
+    return true;
+  });
 
   const confidenceColor = (c) => {
     if (c >= 0.8) return '#22c55e';
@@ -92,8 +117,9 @@ export default function AICameraPanel() {
 
             {audioInputs.map((input) => {
               const level = obsAudioLevels[input.inputName];
+              const hasMeters = level !== undefined;
               const assigned = micAssignments[input.inputName] || '';
-              const isActive = level > audioSensitivity;
+              const isActive = hasMeters && level > audioSensitivity;
 
               return (
                 <div
@@ -103,7 +129,12 @@ export default function AICameraPanel() {
                   <div className="assign-mic">
                     <div className="assign-mic-name">
                       <span className={`speaking-dot ${isActive ? 'active' : ''}`} />
-                      {input.inputName}
+                      <span>{input.inputName}</span>
+                      {!hasMeters && (
+                        <span className="no-meter-badge" title="No audio meter data yet — mic may be off or muted in OBS">
+                          no signal
+                        </span>
+                      )}
                     </div>
                     <AudioMeter level={level} />
                   </div>
@@ -131,6 +162,29 @@ export default function AICameraPanel() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Wide-angle / multi-speaker scene */}
+        {audioInputs.length > 0 && (
+          <div className="wide-angle-row">
+            <span className="wide-angle-label">
+              <span className="speaking-dot" style={{ background: '#6366f1' }} />
+              Multi-speaker (Camera 3)
+            </span>
+            <div className="assign-arrow">→</div>
+            <select
+              value={wideAngleScene || ''}
+              onChange={(e) => setWideAngleScene(e.target.value || null)}
+              className={`scene-select ${wideAngleScene ? 'assigned' : 'unassigned'}`}
+            >
+              <option value="">— wide angle off —</option>
+              {scenes.map((s) => (
+                <option key={s.sceneName} value={s.sceneName}>
+                  {s.sceneName}
+                </option>
+              ))}
+            </select>
           </div>
         )}
       </div>

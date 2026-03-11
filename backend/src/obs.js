@@ -43,7 +43,10 @@ export async function connectOBS(host, port, password) {
   if (isConnected) {
     await obs.disconnect();
   }
-  await obs.connect(`ws://${host}:${port}`, password);
+  // 2047 = all standard events, 65536 = InputVolumeMeters (high-volume, opt-in only)
+  await obs.connect(`ws://${host}:${port}`, password, {
+    eventSubscriptions: 2047 | 65536,
+  });
   isConnected = true;
   broadcastToClients({ type: 'ConnectionOpened' });
   console.log(`[OBS] Connected to ws://${host}:${port}`);
