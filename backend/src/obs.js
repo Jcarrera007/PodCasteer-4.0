@@ -11,10 +11,16 @@ const OBS_EVENTS_TO_RELAY = [
   'SceneListChanged',
   'SceneItemEnableStateChanged',
   'InputVolumeMeters',
+  'InputMuteStateChanged',
 ];
 
 OBS_EVENTS_TO_RELAY.forEach((eventName) => {
   obs.on(eventName, (data) => {
+    if (eventName === 'InputVolumeMeters') {
+      console.log('[OBS] InputVolumeMeters inputs:', data.inputs?.map(i => i.inputName));
+      obs.off('InputVolumeMeters'); // log once, then re-register silently
+      obs.on('InputVolumeMeters', (d) => broadcastToClients({ type: 'InputVolumeMeters', data: d }));
+    }
     broadcastToClients({ type: eventName, data });
   });
 });

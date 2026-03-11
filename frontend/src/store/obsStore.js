@@ -10,6 +10,8 @@ export const useObsStore = create((set, get) => ({
   scenes: [],
   currentScene: null,
   sources: [],
+  mutedInputs: {},   // { inputName: bool }
+  mediaInputs: [],   // media/ffmpeg sources for soundboard
   isStreaming: false,
   isRecording: false,
   obsAudioLevels: {}, // { inputName: dBFS }
@@ -29,6 +31,10 @@ export const useObsStore = create((set, get) => ({
   setScenes: (scenes) => set({ scenes }),
   setCurrentScene: (currentScene) => set({ currentScene }),
   setSources: (sources) => set({ sources }),
+  setMutedInputs: (mutedInputs) => set({ mutedInputs }),
+  setInputMuted: (inputName, muted) =>
+    set((state) => ({ mutedInputs: { ...state.mutedInputs, [inputName]: muted } })),
+  setMediaInputs: (mediaInputs) => set({ mediaInputs }),
   setIsStreaming: (isStreaming) => set({ isStreaming }),
   setIsRecording: (isRecording) => set({ isRecording }),
   setAiEnabled: (aiEnabled) => set({ aiEnabled }),
@@ -80,11 +86,14 @@ export const useObsStore = create((set, get) => ({
       case 'SceneListChanged':
         set({ scenes: data.scenes });
         break;
+      case 'InputMuteStateChanged':
+        set((state) => ({
+          mutedInputs: { ...state.mutedInputs, [data.inputName]: data.inputMuted },
+        }));
+        break;
       case 'InputVolumeMeters': {
-        // data.inputs: [{ inputName, inputLevelsMul: [[magnitude, peak], ...] }]
         const obsAudioLevels = {};
         for (const input of data.inputs) {
-          // Take max magnitude across all channels, convert multiplier to dBFS
           const magnitude = Math.max(...input.inputLevelsMul.map((ch) => ch[0] ?? 0));
           obsAudioLevels[input.inputName] = magnitude > 0 ? 20 * Math.log10(magnitude) : -100;
         }

@@ -3,6 +3,7 @@ import ConnectionPanel from './components/ConnectionPanel';
 import SceneControl from './components/SceneControl';
 import StreamControl from './components/StreamControl';
 import SourceControl from './components/SourceControl';
+import SoundBoard from './components/SoundBoard';
 import AICameraPanel from './components/AICameraPanel';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
         <aside className="col-left">
           <ConnectionPanel />
           <StreamControl />
+          <SoundBoard />
         </aside>
 
         <section className="col-center">

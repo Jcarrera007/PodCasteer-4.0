@@ -24,17 +24,32 @@ export default function ConnectionPanel() {
   };
 
   const statusColor = {
-    connected: '#22c55e',
-    connecting: '#eab308',
+    connected: '#10b981',
+    connecting: '#f59e0b',
     error: '#ef4444',
-    disconnected: '#6b7280',
+    disconnected: '#4a5568',
+  }[connectionStatus];
+
+  const statusLabel = {
+    connected: 'Connected',
+    connecting: 'Connecting…',
+    error: 'Error',
+    disconnected: 'Disconnected',
   }[connectionStatus];
 
   return (
     <div className="panel">
       <div className="panel-header">
         <h2>OBS Connection</h2>
-        <span className="status-dot" style={{ background: statusColor }} title={connectionStatus} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span
+            className={`status-dot ${isConnected ? 'pulse' : ''}`}
+            style={{ background: statusColor }}
+          />
+          <span style={{ fontSize: '0.72rem', color: statusColor, fontWeight: 600 }}>
+            {statusLabel}
+          </span>
+        </div>
       </div>
 
       <div className="form-group">
@@ -66,17 +81,11 @@ export default function ConnectionPanel() {
           value={obsConfig.password}
           onChange={(e) => setObsConfig({ ...obsConfig, password: e.target.value })}
           disabled={isConnected || isConnecting}
-          placeholder="(leave blank if none)"
+          placeholder="Leave blank if none"
         />
       </div>
 
-      {connectionError && (
-        <p className="error-text">{connectionError}</p>
-      )}
-
-      <div className="status-text">
-        Status: <strong style={{ color: statusColor }}>{connectionStatus}</strong>
-      </div>
+      {connectionError && <p className="error-text">{connectionError}</p>}
 
       {isConnected ? (
         <button className="btn btn-danger" onClick={handleDisconnect} disabled={loading}>
@@ -88,7 +97,7 @@ export default function ConnectionPanel() {
           onClick={handleConnect}
           disabled={loading || isConnecting}
         >
-          {isConnecting ? 'Connecting...' : 'Connect'}
+          {isConnecting ? 'Connecting…' : 'Connect to OBS'}
         </button>
       )}
     </div>

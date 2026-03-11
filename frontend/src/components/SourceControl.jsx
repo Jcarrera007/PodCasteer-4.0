@@ -3,8 +3,8 @@ import { useObsStore } from '../store/obsStore';
 import { useOBS } from '../hooks/useOBS';
 
 export default function SourceControl() {
-  const { scenes, currentScene, connectionStatus } = useObsStore();
-  const { fetchSceneItems, toggleSourceVisibility } = useOBS();
+  const { scenes, currentScene, connectionStatus, mutedInputs, sources, obsAudioLevels } = useObsStore();
+  const { fetchSceneItems, toggleSourceVisibility, toggleInputMute } = useOBS();
   const [sceneItems, setSceneItems] = useState([]);
   const [selectedScene, setSelectedScene] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,6 +47,10 @@ export default function SourceControl() {
     );
   };
 
+  const audioInputs = sources.filter(
+    (s) => mutedInputs[s.inputName] !== undefined || obsAudioLevels[s.inputName] !== undefined
+  );
+
   return (
     <div className="panel">
       <div className="panel-header">
@@ -67,8 +71,7 @@ export default function SourceControl() {
       </div>
 
       {!connected && <p className="muted">Connect to OBS to see sources.</p>}
-
-      {connected && loading && <p className="muted">Loading...</p>}
+      {connected && loading && <p className="muted">Loading…</p>}
 
       <div className="source-list">
         {sceneItems.map((item) => (
@@ -85,6 +88,34 @@ export default function SourceControl() {
           </div>
         ))}
       </div>
+
+      {audioInputs.length > 0 && (
+        <>
+          <h2 style={{ marginTop: 14 }}>Audio Inputs</h2>
+          <div className="source-list">
+            {audioInputs.map((input) => {
+              const muted = mutedInputs[input.inputName] ?? false;
+              return (
+                <div key={input.inputName} className="source-item">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      className="status-dot"
+                      style={{ background: muted ? '#ef4444' : '#10b981' }}
+                    />
+                    <span className="source-name">{input.inputName}</span>
+                  </div>
+                  <button
+                    className={`btn btn-sm ${muted ? 'btn-success' : 'btn-danger'}`}
+                    onClick={() => toggleInputMute(input.inputName)}
+                  >
+                    {muted ? 'Unmute' : 'Mute'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

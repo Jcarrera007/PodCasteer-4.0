@@ -14,16 +14,19 @@ export default function StreamControl() {
         <div className="status-indicator">
           <span
             className="status-dot"
-            style={{ background: isStreaming ? '#ef4444' : '#6b7280' }}
+            style={{ background: isStreaming ? '#ef4444' : '#4a5568' }}
           />
-          <span>{isStreaming ? 'LIVE' : 'Offline'}</span>
+          {isStreaming
+            ? <span className="live-badge">LIVE</span>
+            : <span style={{ color: 'var(--text-secondary)' }}>Offline</span>
+          }
         </div>
         <button
-          className={`btn ${isStreaming ? 'btn-danger' : 'btn-success'}`}
+          className={`btn ${isStreaming ? 'btn-danger' : 'btn-success'} btn-sm`}
           onClick={isStreaming ? stopStream : startStream}
           disabled={!connected}
         >
-          {isStreaming ? 'Stop Stream' : 'Start Stream'}
+          {isStreaming ? 'Stop Stream' : 'Go Live'}
         </button>
       </div>
 
@@ -31,16 +34,19 @@ export default function StreamControl() {
         <div className="status-indicator">
           <span
             className="status-dot"
-            style={{ background: isRecording ? '#ef4444' : '#6b7280' }}
+            style={{ background: isRecording ? '#ef4444' : '#4a5568' }}
           />
-          <span>{isRecording ? 'REC' : 'Not Recording'}</span>
+          {isRecording
+            ? <span style={{ color: '#ef4444', fontWeight: 600 }}>Recording</span>
+            : <span style={{ color: 'var(--text-secondary)' }}>Not Recording</span>
+          }
         </div>
         <button
-          className={`btn ${isRecording ? 'btn-danger' : 'btn-warning'}`}
+          className={`btn ${isRecording ? 'btn-danger' : 'btn-warning'} btn-sm`}
           onClick={isRecording ? stopRecord : startRecord}
           disabled={!connected}
         >
-          {isRecording ? 'Stop Record' : 'Start Record'}
+          {isRecording ? 'Stop' : 'Record'}
         </button>
       </div>
     </div>

@@ -11,8 +11,7 @@ export function useOBS() {
     store.setConnectionError(null);
     try {
       await api.post('/obs/connect', config);
-      const data = await fetchScenes();
-      return data;
+      await fetchScenes();
     } catch (err) {
       store.setConnectionStatus('error');
       store.setConnectionError(err.response?.data?.error || err.message);
@@ -45,7 +44,26 @@ export function useOBS() {
   const fetchSources = async () => {
     const res = await api.get('/obs/sources');
     store.setSources(res.data.sources);
+    // Also fetch mute states and media sources
+    fetchMuteStates();
+    fetchMediaInputs();
     return res.data.sources;
+  };
+
+  const fetchMuteStates = async () => {
+    try {
+      const res = await api.get('/obs/inputs/mute');
+      const map = {};
+      res.data.muteStates.forEach(({ inputName, muted }) => { map[inputName] = muted; });
+      store.setMutedInputs(map);
+    } catch {}
+  };
+
+  const fetchMediaInputs = async () => {
+    try {
+      const res = await api.get('/obs/media');
+      store.setMediaInputs(res.data.media || []);
+    } catch {}
   };
 
   const fetchSceneItems = async (sceneName) => {
@@ -57,28 +75,27 @@ export function useOBS() {
     await api.post('/obs/sources/visibility', { sceneName, sceneItemId, enabled });
   };
 
-  const startStream = async () => {
-    await api.post('/obs/stream/start');
-    store.setIsStreaming(true);
+  const setInputMuted = async (inputName, muted) => {
+    await api.post('/obs/inputs/mute', { inputName, muted });
+    store.setInputMuted(inputName, muted);
   };
 
-  const stopStream = async () => {
-    await api.post('/obs/stream/stop');
-    store.setIsStreaming(false);
+  const toggleInputMute = async (inputName) => {
+    await api.post('/obs/inputs/mute/toggle', { inputName });
+    store.setInputMuted(inputName, !store.mutedInputs[inputName]);
   };
 
-  const startRecord = async () => {
-    await api.post('/obs/record/start');
-    store.setIsRecording(true);
+  const triggerMedia = async (inputName) => {
+    await api.post('/obs/media/trigger', { inputName });
   };
 
-  const stopRecord = async () => {
-    await api.post('/obs/record/stop');
-    store.setIsRecording(false);
-  };
+  const startStream = async () => { await api.post('/obs/stream/start'); store.setIsStreaming(true); };
+  const stopStream  = async () => { await api.post('/obs/stream/stop');  store.setIsStreaming(false); };
+  const startRecord = async () => { await api.post('/obs/record/start'); store.setIsRecording(true); };
+  const stopRecord  = async () => { await api.post('/obs/record/stop');  store.setIsRecording(false); };
 
   const analyzeAudio = async (obsAudioLevels, currentScene) => {
-    const { aiAutoSwitch, micAssignments } = store;
+    const { aiAutoSwitch, micAssignments, mediaInputs } = store;
 
     const levelsWithScenes = Object.entries(obsAudioLevels).map(([inputName, level]) => ({
       source: inputName,
@@ -90,6 +107,7 @@ export function useOBS() {
       audioLevels: levelsWithScenes,
       currentScene,
       autoSwitch: aiAutoSwitch,
+      availableMedia: mediaInputs.map((m) => m.inputName),
     });
 
     store.addClaudeDecision(res.data);
@@ -97,17 +115,12 @@ export function useOBS() {
   };
 
   return {
-    connect,
-    disconnect,
-    fetchScenes,
-    switchScene,
-    fetchSources,
-    fetchSceneItems,
+    connect, disconnect, fetchScenes, switchScene,
+    fetchSources, fetchSceneItems, fetchMuteStates, fetchMediaInputs,
     toggleSourceVisibility,
-    startStream,
-    stopStream,
-    startRecord,
-    stopRecord,
+    setInputMuted, toggleInputMute,
+    triggerMedia,
+    startStream, stopStream, startRecord, stopRecord,
     analyzeAudio,
   };
 }

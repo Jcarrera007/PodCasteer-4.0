@@ -115,4 +115,96 @@ router.post('/record/stop', async (req, res) => {
   }
 });
 
+// GET /api/obs/inputs/mute — get mute state for all inputs
+router.get('/inputs/mute', async (req, res) => {
+  try {
+    const { inputs } = await obs.call('GetInputList');
+    const muteStates = await Promise.all(
+      inputs.map(async (input) => {
+        try {
+          const { inputMuted } = await obs.call('GetInputMute', { inputName: input.inputName });
+          return { inputName: input.inputName, muted: inputMuted };
+        } catch {
+          return { inputName: input.inputName, muted: false };
+        }
+      })
+    );
+    res.json({ muteStates });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/obs/inputs/mute — { inputName, muted: bool }
+router.post('/inputs/mute', async (req, res) => {
+  const { inputName, muted } = req.body;
+  try {
+    await obs.call('SetInputMute', { inputName, inputMuted: muted });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/obs/inputs/mute/toggle — { inputName }
+router.post('/inputs/mute/toggle', async (req, res) => {
+  const { inputName } = req.body;
+  try {
+    await obs.call('ToggleInputMute', { inputName });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/obs/media — list all media sources
+router.get('/media', async (req, res) => {
+  try {
+    const { inputs } = await obs.call('GetInputList', { inputKind: 'ffmpeg_source' });
+    res.json({ media: inputs });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/obs/media/trigger — play a media source { inputName }
+router.post('/media/trigger', async (req, res) => {
+  const { inputName } = req.body;
+  try {
+    await obs.call('TriggerMediaInputAction', {
+      inputName,
+      mediaAction: 'OBS_WEBSOCKET_MEDIA_INPUT_ACTION_RESTART',
+    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/obs/transition — { transitionName, transitionDuration (ms) }
+router.post('/transition', async (req, res) => {
+  const { transitionName, transitionDuration } = req.body;
+  try {
+    if (transitionName) {
+      await obs.call('SetCurrentSceneTransition', { transitionName });
+    }
+    if (transitionDuration) {
+      await obs.call('SetCurrentSceneTransitionDuration', { transitionDuration });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/obs/transitions — list available transitions
+router.get('/transitions', async (req, res) => {
+  try {
+    const { transitions, currentSceneTransitionName } = await obs.call('GetSceneTransitionList');
+    res.json({ transitions, current: currentSceneTransitionName });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
