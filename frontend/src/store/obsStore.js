@@ -22,6 +22,7 @@ export const useObsStore = create((set, get) => ({
   aiAutoSwitch: false,
   micAssignments: {},
   audioSensitivity: -30,
+  claudeInterval: 15,
   wideAngleScene: null,
   claudeDecisionLog: [],
 
@@ -42,6 +43,7 @@ export const useObsStore = create((set, get) => ({
   setAiMode: (aiMode) => set({ aiMode }),
   setAiAutoSwitch: (aiAutoSwitch) => set({ aiAutoSwitch }),
   setAudioSensitivity: (audioSensitivity) => set({ audioSensitivity }),
+  setClaudeInterval: (claudeInterval) => set({ claudeInterval }),
   setWideAngleScene: (wideAngleScene) => set({ wideAngleScene }),
 
   setMicAssignment: (deviceId, sceneName) =>

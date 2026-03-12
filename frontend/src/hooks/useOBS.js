@@ -1,7 +1,12 @@
 import axios from 'axios';
 import { useObsStore } from '../store/obsStore';
 
-const api = axios.create({ baseURL: '/api' });
+// In dev: Vite proxy forwards /api → localhost:3001 (no env var needed).
+// In production: set VITE_API_URL to your Cloudflare tunnel root.
+// e.g. VITE_API_URL=https://your-tunnel.trycloudflare.com
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
+});
 
 export function useOBS() {
   const store = useObsStore();

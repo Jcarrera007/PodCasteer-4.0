@@ -6,11 +6,11 @@ import AudioMeter from './AudioMeter';
 export default function AICameraPanel() {
   const {
     aiEnabled, aiMode, aiAutoSwitch,
-    audioSensitivity, micAssignments, scenes, currentScene,
+    audioSensitivity, claudeInterval, micAssignments, scenes, currentScene,
     obsAudioLevels, claudeDecisionLog, sources,
     wideAngleScene,
     setAiEnabled, setAiMode, setAiAutoSwitch,
-    setAudioSensitivity, setMicAssignment, removeMicAssignment,
+    setAudioSensitivity, setClaudeInterval, setMicAssignment, removeMicAssignment,
     setWideAngleScene,
   } = useObsStore();
 
@@ -22,18 +22,20 @@ export default function AICameraPanel() {
   const sceneRef = useRef(currentScene);
   const sensitivityRef = useRef(audioSensitivity);
   const wideAngleRef = useRef(wideAngleScene);
+  const claudeIntervalRef = useRef(claudeInterval);
 
   useEffect(() => { levelsRef.current = obsAudioLevels; }, [obsAudioLevels]);
   useEffect(() => { assignRef.current = micAssignments; }, [micAssignments]);
   useEffect(() => { sceneRef.current = currentScene; }, [currentScene]);
   useEffect(() => { sensitivityRef.current = audioSensitivity; }, [audioSensitivity]);
   useEffect(() => { wideAngleRef.current = wideAngleScene; }, [wideAngleScene]);
+  useEffect(() => { claudeIntervalRef.current = claudeInterval; }, [claudeInterval]);
 
   useEffect(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (!aiEnabled) return;
 
-    const cadence = aiMode === 'claude' ? 15000 : 500;
+    const cadence = aiMode === 'claude' ? claudeIntervalRef.current * 1000 : 500;
 
     intervalRef.current = setInterval(async () => {
       const levels = levelsRef.current;
@@ -69,7 +71,7 @@ export default function AICameraPanel() {
     }, cadence);
 
     return () => clearInterval(intervalRef.current);
-  }, [aiEnabled, aiMode]);
+  }, [aiEnabled, aiMode, claudeInterval]);
 
   // Video capture kinds — exclude from mic list (they're cameras, not mics)
   const VIDEO_KINDS = new Set([
@@ -222,15 +224,36 @@ export default function AICameraPanel() {
         </div>
 
         {aiMode === 'claude' && (
-          <div className="toggle-row">
-            <label>Claude Auto-Switch</label>
-            <button
-              className={`toggle-btn ${aiAutoSwitch ? 'active' : ''}`}
-              onClick={() => setAiAutoSwitch(!aiAutoSwitch)}
-            >
-              {aiAutoSwitch ? 'ON' : 'OFF'}
-            </button>
-          </div>
+          <>
+            <div className="toggle-row">
+              <label>Claude Auto-Switch</label>
+              <button
+                className={`toggle-btn ${aiAutoSwitch ? 'active' : ''}`}
+                onClick={() => setAiAutoSwitch(!aiAutoSwitch)}
+              >
+                {aiAutoSwitch ? 'ON' : 'OFF'}
+              </button>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label>
+                Decision interval: <strong>{claudeInterval}s</strong>
+              </label>
+              <input
+                type="range"
+                min="5"
+                max="60"
+                step="1"
+                value={claudeInterval}
+                onChange={(e) => setClaudeInterval(Number(e.target.value))}
+                className="slider"
+              />
+              <div className="threshold-hints">
+                <span>5s (faster)</span>
+                <span>60s (slower)</span>
+              </div>
+            </div>
+          </>
         )}
 
         <div className="form-group">
@@ -256,7 +279,7 @@ export default function AICameraPanel() {
           <p className="ai-status">
             {aiMode === 'audio'
               ? 'Switching to loudest mic every 500ms'
-              : 'Claude deciding every 15s'}
+              : `Claude deciding every ${claudeInterval}s`}
           </p>
         )}
       </div>

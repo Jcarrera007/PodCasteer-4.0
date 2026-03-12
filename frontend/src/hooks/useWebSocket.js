@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useObsStore } from '../store/obsStore';
 
-const WS_URL = 'ws://localhost:3001/ws';
+// In dev: falls back to local backend. In production: set VITE_WS_URL to your tunnel URL.
+// e.g. VITE_WS_URL=wss://your-tunnel.trycloudflare.com/ws
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws';
 const RECONNECT_DELAY = 3000;
 
 export function useWebSocket() {
