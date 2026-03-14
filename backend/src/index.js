@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
@@ -9,6 +10,16 @@ import { WebSocketServer } from 'ws';
 import obsRoutes from './routes/obs.js';
 import aiRoutes from './routes/ai.js';
 import { initWsRelay } from './wsRelay.js';
+
+function getLocalIP() {
+  const nets = os.networkInterfaces();
+  for (const iface of Object.values(nets)) {
+    for (const net of iface) {
+      if (net.family === 'IPv4' && !net.internal) return net.address;
+    }
+  }
+  return 'localhost';
+}
 
 // import.meta.url is only available in ESM (dev mode).
 // In the bundled CJS build, FRONTEND_DIST env var is used instead.
@@ -40,6 +51,11 @@ app.use(express.json());
 
 app.use('/api/obs', obsRoutes);
 app.use('/api/ai', aiRoutes);
+
+app.get('/api/info', (_req, res) => {
+  const ip = getLocalIP();
+  res.json({ ip, port: PORT, url: `http://${ip}:${PORT}` });
+});
 
 // Serve built frontend for Electron desktop and mobile LAN access
 // FRONTEND_DIST is set by electron/main.cjs; fallback for raw dev usage
