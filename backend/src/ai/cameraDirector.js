@@ -1,7 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 const SYSTEM_PROMPT = `You are an autonomous AI producer for a live podcast recording session.
 
 You receive real-time audio data from microphones and must direct the show by making smart production decisions.
@@ -36,7 +34,15 @@ For switchTo use: "Scene Name" string or null`;
 const recentHistory = [];
 const MAX_HISTORY_PAIRS = 5;
 
-export async function analyzeAudioForCameraSwitch(audioLevels, currentScene, availableMedia = []) {
+export async function analyzeAudioForCameraSwitch(audioLevels, currentScene, availableMedia = [], apiKey = null) {
+  const key = apiKey || process.env.ANTHROPIC_API_KEY;
+
+  if (!key) {
+    return { switchTo: null, muteMic: null, playSound: null, reason: 'No API key configured — add your Anthropic key in Settings' };
+  }
+
+  const client = new Anthropic({ apiKey: key });
+
   const userMessage = {
     role: 'user',
     content: JSON.stringify({

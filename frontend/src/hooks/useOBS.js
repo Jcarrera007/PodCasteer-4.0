@@ -100,7 +100,7 @@ export function useOBS() {
   const stopRecord  = async () => { await api.post('/obs/record/stop');  store.setIsRecording(false); };
 
   const analyzeAudio = async (obsAudioLevels, currentScene) => {
-    const { aiAutoSwitch, micAssignments, mediaInputs } = store;
+    const { aiAutoSwitch, micAssignments, mediaInputs, anthropicApiKey } = store;
 
     const levelsWithScenes = Object.entries(obsAudioLevels).map(([inputName, level]) => ({
       source: inputName,
@@ -113,6 +113,7 @@ export function useOBS() {
       currentScene,
       autoSwitch: aiAutoSwitch,
       availableMedia: mediaInputs.map((m) => m.inputName),
+      apiKey: anthropicApiKey || undefined,
     });
 
     store.addClaudeDecision(res.data);

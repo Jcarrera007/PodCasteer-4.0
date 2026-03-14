@@ -12,7 +12,10 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>PodCasteer <span className="version">4.0</span></h1>
+        <div className="app-title-row">
+          <img src="/icon.png" alt="PodCasteer" className="app-logo" />
+          <h1>PodCasteer</h1>
+        </div>
         <p className="subtitle">OBS Remote Control + AI Camera Director</p>
       </header>
 

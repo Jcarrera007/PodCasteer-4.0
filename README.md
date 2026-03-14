@@ -1,49 +1,73 @@
-# PodCasteer 4.0
+# PodCasteer
 
-A real-time OBS remote control dashboard with an AI camera director that automatically switches podcast camera scenes based on who is speaking.
+A real-time OBS remote control dashboard with an AI camera director that automatically switches podcast camera scenes based on who is speaking — packaged as a standalone Windows desktop app with simultaneous mobile/tablet monitoring over your local network.
 
 ---
 
 ## What It Does
 
-PodCasteer connects to your OBS Studio instance over its built-in WebSocket server and gives you a browser-based control panel. On top of basic remote control (scenes, stream, record, sources, audio), it layers an AI system that watches microphone audio levels and decides which camera to cut to — automatically, in real time.
+PodCasteer connects to your OBS Studio instance over its built-in WebSocket server and gives you a full control panel. On top of basic remote control (scenes, stream, record, sources, audio), it layers an AI system that watches microphone audio levels and decides which camera to cut to — automatically, in real time.
 
 **Two switching modes:**
 
-- **Audio Level mode** — purely mechanical. Reads OBS audio meter data 2x per second. Whoever is loudest above your sensitivity threshold gets the cut. If two or more mics are loud at the same time, it switches to your designated wide-angle / Camera 3 scene.
-- **Claude AI mode** — sends the current audio levels and conversation history to Claude (claude-haiku) every 15 seconds. Claude acts as a camera director and decides when to switch, why, and with what confidence. It avoids flip-flopping, holds on silence, and learns from recent decisions via a sliding conversation window.
+- **Audio Level mode** — purely mechanical. Reads OBS audio meter data 2× per second. Whoever is loudest above your sensitivity threshold gets the cut. When **all assigned mics** are speaking simultaneously, it cuts to your designated wide-angle scene.
+- **Claude AI mode** — sends current audio levels and conversation history to Claude (claude-haiku) on a configurable interval. Claude acts as a camera director and decides when to switch, why, and with what confidence. It avoids flip-flopping, holds on silence, and learns from recent decisions via a sliding conversation window.
+
+---
+
+## Desktop App + Mobile Monitor
+
+PodCasteer ships as a **native Windows desktop app** (`.exe` installer). When you launch it:
+
+- The full dashboard opens as a native window
+- The Express backend starts automatically in the background — no terminal needed
+- The window title shows your local network IP, e.g. `PodCasteer | Mobile monitor: http://192.168.1.x:3001`
+- Any phone, tablet, or second computer on the same Wi-Fi can open that URL in a browser and get the full dashboard
+
+No extra setup required for mobile access — it's always on while the app is running.
 
 ---
 
 ## Architecture
 
 ```
-PodCasteer-4.0/
-├── backend/                    Node.js + Express API server
+PodCasteer/
+├── electron/
+│   └── main.cjs                Electron main process — starts backend, creates window,
+│                               detects local IP, checks for updates
+│
+├── backend/
 │   └── src/
-│       ├── index.js            HTTP server + WebSocket server (port 3001)
-│       ├── obs.js              OBS WebSocket singleton — connects, relays events
-│       ├── wsRelay.js          Broadcasts OBS events to all browser clients
+│       ├── index.js            Express + WebSocket server (port 3001)
+│       │                       Serves built frontend for desktop + mobile access
+│       ├── obs.js              OBS WebSocket singleton
+│       ├── wsRelay.js          Broadcasts OBS events to browser clients
 │       └── routes/
-│           ├── obs.js          REST API: /api/obs/*
+│           ├── obs.js          REST API: /api/obs/*  (26 endpoints)
 │           └── ai.js           REST API: POST /api/ai/analyze
 │       └── ai/
 │           └── cameraDirector.js   Claude AI with sliding conversation history
 │
-└── frontend/                   React app (Vite, port 5173)
-    └── src/
-        ├── App.jsx             Root layout — 3-column grid
-        ├── store/obsStore.js   Zustand global state + OBS event dispatcher
-        ├── hooks/
-        │   ├── useOBS.js       Axios wrappers for all REST calls
-        │   └── useWebSocket.js WebSocket client — auto-reconnects every 3s
-        └── components/
-            ├── ConnectionPanel.jsx   OBS host/port/password + connect
-            ├── SceneControl.jsx      Scene list + live switching
-            ├── StreamControl.jsx     Go Live / Record buttons
-            ├── SourceControl.jsx     Source visibility + audio mute toggles
-            ├── SoundBoard.jsx        One-click media source triggers
-            └── AICameraPanel.jsx     Mic→camera assignments + AI controls
+├── frontend/
+│   └── src/
+│       ├── App.jsx             Root layout — 3-column grid with logo header
+│       ├── store/obsStore.js   Zustand global state + OBS event dispatcher
+│       ├── hooks/
+│       │   ├── useOBS.js       Axios wrappers for all REST calls
+│       │   └── useWebSocket.js WebSocket client — uses current hostname (works on mobile)
+│       └── components/
+│           ├── ConnectionPanel.jsx   OBS host/port/password + connect
+│           ├── SceneControl.jsx      Scene list + live switching
+│           ├── StreamControl.jsx     Go Live / Record buttons
+│           ├── SourceControl.jsx     Source visibility + audio mute toggles
+│           ├── SoundBoard.jsx        One-click media source triggers
+│           └── AICameraPanel.jsx     API key settings, mic→camera assignments, AI controls
+│
+├── backend-bundle/
+│   └── server.cjs              Bundled backend (generated by esbuild — all deps included,
+│                               no node_modules needed in packaged app)
+│
+└── frontend/dist/              Built React app (generated by Vite)
 ```
 
 ---
@@ -68,17 +92,18 @@ wsRelay.js  ──► Browser WebSocket clients (port 3001/ws)          │
                     ├── Updates current scene                     │
                     └── Updates stream/record status              │
                                                                   │
-AICameraPanel (500ms or 15s interval)                             │
+AICameraPanel (500ms or N-second interval)                        │
     │  Reads levels from store                                     │
     ├── Audio mode: picks loudest mic → switches scene ───────────┘
+    │   └── All assigned mics active → wide angle scene
     └── Claude mode: POST /api/ai/analyze
                          │
                     backend/routes/ai.js
-                         │
+                         │  (uses API key from request or ANTHROPIC_API_KEY env var)
                     cameraDirector.js
                          │  Calls Claude API
                          ▼
-                    { switchTo, reason, confidence }
+                    { switchTo, muteMic, playSound, reason, confidence }
                          │
                     If autoSwitch=true → SetCurrentProgramScene
                     Response logged in browser decision log
@@ -92,11 +117,11 @@ OBS streams real-time audio meter data via its `InputVolumeMeters` WebSocket eve
 
 ```js
 obs.connect(url, password, { eventSubscriptions: 2047 | 65536 })
-// 2047 = all standard events
+// 2047  = all standard events
 // 65536 = InputVolumeMeters (high-frequency, must be explicitly enabled)
 ```
 
-The raw data arrives as a multiplier (`0.0 – 1.0`) per audio channel. The backend converts it to dBFS:
+The raw data arrives as a multiplier (`0.0–1.0`) per audio channel. The frontend converts it to dBFS:
 
 ```
 dBFS = 20 × log10(magnitude)
@@ -121,7 +146,7 @@ Each call sends:
     { "source": "mic1", "level": -18.4, "assignedScene": "Camera 1" },
     { "source": "mic2", "level": -52.1, "assignedScene": "Camera 2" }
   ],
-  "recentSwitches": ["Camera 1", "Camera 2"]
+  "availableMedia": ["intro-music", "transition-sound"]
 }
 ```
 
@@ -129,20 +154,33 @@ Claude returns:
 ```json
 {
   "switchTo": "Camera 1",
+  "muteMic": null,
+  "playSound": null,
   "reason": "mic1 has been consistently loud for 3 seconds. mic2 is silent.",
   "confidence": 0.91
 }
 ```
 
-If `autoSwitch` is enabled, the backend calls `SetCurrentProgramScene` directly. The decision is also sent to the browser and logged in the Decision Log panel.
+If `autoSwitch` is enabled, the backend calls `SetCurrentProgramScene` directly. The decision is sent to the browser and logged in the Decision Log panel.
 
-**Rate limiting:** The free Anthropic tier allows ~5 requests/minute. The Claude mode interval is set to 15 seconds (4 req/min) to stay safely within limits.
+### API Key
+
+Your Anthropic API key can be entered directly in the **API Settings** section of the AI Camera Panel. It is saved to `localStorage` and persists across sessions. The key is sent with each AI request and takes priority over any server-side environment variable — no `.env` file required for end users.
+
+**Rate limiting:** The free Anthropic tier allows ~5 requests/minute. The Claude mode interval defaults to 15 seconds (4 req/min) to stay safely within limits.
 
 ---
 
-## Multi-Speaker / Camera 3
+## Wide-Angle / Multi-Speaker Scene
 
-When **two or more microphones** are simultaneously above the speaking threshold in Audio Level mode, PodCasteer automatically cuts to a designated **wide-angle scene** (Camera 3). Assign this in the AI Camera Director panel under "Multi-speaker (Camera 3)".
+The wide-angle scene activates when **all assigned microphones** are simultaneously above the speaking threshold in Audio Level mode. This means:
+
+- **2 mics assigned, both speaking** → wide angle ✓
+- **2 mics assigned, only 1 speaking** → cuts to that speaker's camera
+- **3 mics assigned, 2 speaking** → cuts to the louder speaker's camera
+- **3 mics assigned, all 3 speaking** → wide angle ✓
+
+Assign your wide-angle scene in the AI Camera Panel under **Multi-speaker (Camera 3)**.
 
 ---
 
@@ -153,50 +191,79 @@ When **two or more microphones** are simultaneously above the speaking threshold
 - OBS Studio 28+ (WebSocket 5.x is built in)
 - Enable WebSocket in OBS: **Tools → obs-websocket Settings → Enable WebSocket Server**
 
-### Install & Run
+### Development
 
 ```bash
 # 1. Clone the repo
 git clone <repo-url>
-cd PodCasteer-4.0
+cd PodCasteer
 
-# 2. Add your Anthropic API key
-cp backend/.env.example backend/.env
-# Edit backend/.env and set ANTHROPIC_API_KEY=sk-ant-...
-
-# 3. Install all dependencies (frontend + backend)
+# 2. Install all dependencies
 npm install
 
-# 4. Start both servers
+# 3. (Optional) Add your Anthropic API key for dev
+cp backend/.env.example backend/.env
+# Edit backend/.env → ANTHROPIC_API_KEY=sk-ant-...
+
+# 4. Start backend + frontend dev servers
 npm run dev
-# Backend: http://localhost:3001
+# Backend:  http://localhost:3001
 # Frontend: http://localhost:5173
 ```
 
-Open **http://localhost:5173** in your browser.
+Open **http://localhost:5173** in your browser. The API key can also be entered in the app UI under AI Settings.
 
-### WSL2 Users
-
-If running the backend inside WSL2 while OBS runs on Windows, `localhost` will not reach OBS. Find your Windows host IP:
+### Build Desktop App (.exe)
 
 ```bash
-ip route | grep default
-# e.g. default via 172.23.48.1 dev eth0
+# Build the React frontend + bundle the backend + package with Electron
+npm run dist
 ```
 
-Use that IP (e.g. `172.23.48.1`) as the host in the Connection Panel instead of `localhost`.
+Output: `dist-electron/PodCasteer Setup 4.0.0.exe`
+
+Install it, launch it, and the full app runs with no terminal or browser required.
+
+### Running the Installer Again (Upgrades)
+
+When a new version is released, running the new installer on a machine with PodCasteer already installed will upgrade it in place. Your settings and API key (stored in AppData) are preserved.
+
+The app also checks for updates automatically at startup if a GitHub releases URL is configured in `electron/main.cjs`:
+
+```js
+const RELEASES_API_URL = 'https://api.github.com/repos/YOUR_USERNAME/PodCasteer/releases/latest';
+```
+
+When a newer version is found, a dialog appears offering to open the download page.
 
 ---
 
 ## Environment Variables
 
-`backend/.env`:
+`backend/.env` (optional — API key can be set in the UI instead):
 ```
 PORT=3001
 ANTHROPIC_API_KEY=sk-ant-...
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
+For the packaged `.exe`, place a `.env` file in the same directory as the installed executable if you prefer server-side key management.
+
 OBS credentials (host, port, password) are entered in the UI at runtime and never persisted to disk.
+
+---
+
+## NPM Scripts
+
+| Script | Description |
+|---|---|
+| `npm run dev` | Start backend + frontend dev servers concurrently |
+| `npm run dev:backend` | Start only the Express backend (nodemon) |
+| `npm run dev:frontend` | Start only the Vite frontend |
+| `npm run build:frontend` | Build React app to `frontend/dist/` |
+| `npm run build:backend` | Bundle backend to `backend-bundle/server.cjs` via esbuild |
+| `npm run electron:dev` | Build both + launch Electron window (no installer) |
+| `npm run dist` | Full production build → `.exe` installer in `dist-electron/` |
 
 ---
 
@@ -204,12 +271,17 @@ OBS credentials (host, port, password) are entered in the UI at runtime and neve
 
 | Feature | How it works |
 |---|---|
+| Desktop app | Electron wraps the full stack — double-click to launch, no terminal |
+| Mobile monitor | Express serves the built frontend on LAN — open the IP shown in the title bar |
 | Scene switching | REST → OBS WebSocket `SetCurrentProgramScene` |
 | Live audio meters | OBS `InputVolumeMeters` event → WebSocket relay → browser |
 | Mute/unmute | `SetInputMute` / `ToggleInputMute` via REST |
 | Soundboard | `TriggerMediaInputAction` restarts any media source |
 | Stream & record | `StartStream` / `StopStream` / `StartRecord` / `StopRecord` |
 | AI audio mode | Browser interval reads dBFS, switches to loudest assigned mic |
-| AI Claude mode | Backend calls Claude API, decision logged with confidence score |
-| Camera 3 / wide angle | Activates when 2+ mics are simultaneously above threshold |
+| AI Claude mode | Sends levels to Claude API, decision logged with confidence score |
+| Wide-angle scene | Activates when ALL assigned mics are simultaneously above threshold |
+| API key in UI | Enter Anthropic key directly in the app — saved to localStorage |
 | Real-time sync | All OBS state changes pushed to browser via WebSocket relay |
+| Auto-update check | On startup, compares app version against GitHub releases |
+| CORS | Local network IPs (192.168.x, 10.x, 172.16-31.x) allowed by default |

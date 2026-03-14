@@ -25,6 +25,7 @@ export const useObsStore = create((set, get) => ({
   claudeInterval: 15,
   wideAngleScene: null,
   claudeDecisionLog: [],
+  anthropicApiKey: localStorage.getItem('anthropicApiKey') || '',
 
   // Actions
   setConnectionStatus: (status) => set({ connectionStatus: status }),
@@ -39,6 +40,10 @@ export const useObsStore = create((set, get) => ({
   setMediaInputs: (mediaInputs) => set({ mediaInputs }),
   setIsStreaming: (isStreaming) => set({ isStreaming }),
   setIsRecording: (isRecording) => set({ isRecording }),
+  setAnthropicApiKey: (key) => {
+    localStorage.setItem('anthropicApiKey', key);
+    set({ anthropicApiKey: key });
+  },
   setAiEnabled: (aiEnabled) => set({ aiEnabled }),
   setAiMode: (aiMode) => set({ aiMode }),
   setAiAutoSwitch: (aiAutoSwitch) => set({ aiAutoSwitch }),

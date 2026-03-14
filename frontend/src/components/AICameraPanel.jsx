@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useObsStore } from '../store/obsStore';
 import { useOBS } from '../hooks/useOBS';
 import AudioMeter from './AudioMeter';
@@ -8,11 +8,20 @@ export default function AICameraPanel() {
     aiEnabled, aiMode, aiAutoSwitch,
     audioSensitivity, claudeInterval, micAssignments, scenes, currentScene,
     obsAudioLevels, claudeDecisionLog, sources,
-    wideAngleScene,
+    wideAngleScene, anthropicApiKey,
     setAiEnabled, setAiMode, setAiAutoSwitch,
     setAudioSensitivity, setClaudeInterval, setMicAssignment, removeMicAssignment,
-    setWideAngleScene,
+    setWideAngleScene, setAnthropicApiKey,
   } = useObsStore();
+
+  const [apiKeyInput, setApiKeyInput] = useState(anthropicApiKey);
+  const [apiKeySaved, setApiKeySaved] = useState(false);
+
+  const saveApiKey = () => {
+    setAnthropicApiKey(apiKeyInput.trim());
+    setApiKeySaved(true);
+    setTimeout(() => setApiKeySaved(false), 2000);
+  };
 
   const { switchScene, analyzeAudio } = useOBS();
   const intervalRef = useRef(null);
@@ -49,9 +58,10 @@ export default function AICameraPanel() {
         );
         if (active.length === 0) return;
 
-        // Multiple speakers → wide angle scene
+        // Wide angle only when ALL assigned mics are simultaneously active
         const wide = wideAngleRef.current;
-        if (active.length >= 2 && wide) {
+        const totalAssigned = Object.keys(assignments).length;
+        if (wide && totalAssigned >= 2 && active.length >= totalAssigned) {
           if (wide !== scene) switchScene(wide);
           return;
         }
@@ -98,6 +108,41 @@ export default function AICameraPanel() {
   return (
     <div className="panel ai-panel">
       <h2>AI Camera Director</h2>
+
+      {/* ── SECTION 0: API Settings ── */}
+      <div className="ai-section">
+        <h3 className="section-label">API Settings</h3>
+        <div className="form-group" style={{ marginBottom: 0 }}>
+          <label>Anthropic API Key</label>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+            <input
+              type="password"
+              placeholder="sk-ant-..."
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && saveApiKey()}
+              style={{
+                flex: 1, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '6px', padding: '7px 10px', color: 'var(--text)', fontSize: '13px',
+              }}
+            />
+            <button
+              onClick={saveApiKey}
+              style={{
+                background: apiKeySaved ? '#22c55e' : 'var(--accent)',
+                border: 'none', borderRadius: '6px', padding: '7px 14px',
+                color: '#fff', cursor: 'pointer', fontSize: '13px', fontWeight: 600,
+                transition: 'background 0.2s',
+              }}
+            >
+              {apiKeySaved ? 'Saved ✓' : 'Save'}
+            </button>
+          </div>
+          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', marginTop: '5px' }}>
+            {anthropicApiKey ? '● Key configured' : '○ No key — Claude AI mode will not work'}
+          </p>
+        </div>
+      </div>
 
       {/* ── SECTION 1: Mic → Camera assignments ── */}
       <div className="ai-section">

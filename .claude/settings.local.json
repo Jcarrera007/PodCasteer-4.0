@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm show obs-websocket-js version)",
+      "Bash(npm show @anthropic-ai/sdk version)",
+      "Bash(npm show zustand version)",
+      "Bash(npm install)",
+      "Bash(ip route)",
+      "Read(//home/zekki/PodCasteer-4.0/**)",
+      "Bash(cmd.exe /c \"npm install\")",
+      "Bash(cmd.exe /c \"cd /d C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer && npm install 2>&1\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer''; npm install\")",
+      "Bash(powershell.exe -Command \"where.exe node; where.exe npm\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Program Files\\\\nodejs'' -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Roaming\\\\npm'' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Program Files'' | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Program Files\\\\nodejs'' 2>$null; Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\.nvm'' 2>$null; Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Local\\\\Programs\\\\nodejs'' 2>$null; Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Local\\\\nvm'' 2>$null\")",
+      "Bash(powershell.exe -Command \"Test-Path ''C:\\\\Program Files\\\\nodejs''; Test-Path ''C:\\\\Users\\\\Zekki\\\\.nvm''; Test-Path ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Local\\\\Programs\\\\nodejs''; Test-Path ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Roaming\\\\nvm''\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Local'' | Where-Object { $_.Name -match ''node|nvm'' } | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Local\\\\claude-cli-nodejs'' | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Test-Path ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Roaming\\\\fnm''; Test-Path ''C:\\\\Users\\\\Zekki\\\\.volta''; Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Local\\\\fnm'' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Get-Command node -ErrorAction SilentlyContinue | Select-Object Source; Get-Command npm -ErrorAction SilentlyContinue | Select-Object Source\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Roaming'' | Where-Object { $_.Name -match ''npm|node'' } | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\scoop\\\\apps'' -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem ''C:\\\\ProgramData\\\\scoop'' -ErrorAction SilentlyContinue | Select-Object Name\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\'' -Recurse -Filter ''node.exe'' -ErrorAction SilentlyContinue -Depth 5 | Select-Object FullName\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki'' -Recurse -Filter ''node.exe'' -ErrorAction SilentlyContinue -Depth 6 | Select-Object FullName\")",
+      "Bash(echo \"PATH: $PATH\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Local\\\\Microsoft\\\\WindowsApps'' -Filter ''*.exe'' | Where-Object { $_.Name -match ''node|npm'' } | Select-Object Name, FullName\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Roaming\\\\npm'' -ErrorAction SilentlyContinue | Select-Object Name, FullName\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\'' -Filter ''node.exe'' -Recurse -Depth 4 -ErrorAction SilentlyContinue | Select-Object FullName\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki'' -Filter ''node.exe'' -Recurse -Depth 5 -ErrorAction SilentlyContinue | Select-Object FullName\")",
+      "Bash(powershell.exe -Command \"Test-Path ''C:\\\\ProgramData\\\\nvm''; Test-Path ''C:\\\\nvm''; Test-Path ''C:\\\\Users\\\\Zekki\\\\nvm''\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\AppData\\\\Local\\\\Programs\\\\cursor\\\\resources'' -Recurse -Filter ''node.exe'' -Depth 4 -ErrorAction SilentlyContinue | Select-Object FullName\")",
+      "Bash(powershell.exe -Command \"Get-Command npm -ErrorAction SilentlyContinue | Select-Object Source; Get-Command node -ErrorAction SilentlyContinue | Select-Object Source\")",
+      "Bash(powershell.exe -Command \"& ''C:\\\\Program Files\\\\nodejs\\\\npm.cmd'' install\" -WorkingDirectory \"C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\frontend\\\\dist'' -Recurse | Select-Object FullName\")"
+    ]
+  }
+}

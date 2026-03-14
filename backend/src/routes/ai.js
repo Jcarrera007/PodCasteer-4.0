@@ -5,14 +5,14 @@ import { obs, isConnected } from '../obs.js';
 const router = Router();
 
 router.post('/analyze', async (req, res) => {
-  const { audioLevels, currentScene, autoSwitch = false, availableMedia = [] } = req.body;
+  const { audioLevels, currentScene, autoSwitch = false, availableMedia = [], apiKey } = req.body;
 
   if (!audioLevels || !Array.isArray(audioLevels)) {
     return res.status(400).json({ error: 'audioLevels array is required' });
   }
 
   try {
-    const decision = await analyzeAudioForCameraSwitch(audioLevels, currentScene, availableMedia);
+    const decision = await analyzeAudioForCameraSwitch(audioLevels, currentScene, availableMedia, apiKey);
 
     if (isConnected && autoSwitch) {
       if (decision.switchTo && decision.switchTo !== currentScene) {

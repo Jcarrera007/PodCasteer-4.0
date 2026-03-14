@@ -2,14 +2,59 @@
   "name": "podcasteer",
   "version": "4.0.0",
   "private": true,
+  "main": "electron/main.cjs",
   "workspaces": ["backend", "frontend"],
   "scripts": {
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "install:all": "npm install"
+    "install:all": "npm install",
+    "build:frontend": "npm run build --workspace=frontend",
+    "build:backend": "esbuild backend/src/index.js --bundle --platform=node --target=node18 --format=cjs --outfile=backend-bundle/server.cjs --external:bufferutil --external:utf-8-validate",
+    "electron:dev": "npm run build:frontend && npm run build:backend && electron .",
+    "dist": "npm run build:frontend && npm run build:backend && electron-builder"
   },
   "devDependencies": {
-    "concurrently": "^9.0.1"
+    "concurrently": "^9.0.1",
+    "esbuild": "^0.24.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.podcasteer.desktop",
+    "productName": "PodCasteer",
+    "asar": false,
+    "files": [
+      "electron/**/*",
+      "backend-bundle/**/*",
+      "frontend/dist/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist-electron"
+    },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "electron/icon.png"
+    },
+    "mac": {
+      "icon": "electron/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "electron/icon.png",
+      "uninstallerIcon": "electron/icon.png"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.utilities"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }

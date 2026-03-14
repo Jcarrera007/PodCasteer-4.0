@@ -1,9 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useObsStore } from '../store/obsStore';
 
-// In dev: falls back to local backend. In production: set VITE_WS_URL to your tunnel URL.
+// In dev: Vite proxy doesn't forward WS, so falls back to local backend.
+// When served by Express (Electron or mobile LAN), uses the current host automatically.
+// In production: set VITE_WS_URL to your tunnel URL.
 // e.g. VITE_WS_URL=wss://your-tunnel.trycloudflare.com/ws
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:3001/ws';
+const WS_URL = import.meta.env.VITE_WS_URL ||
+  `ws://${window.location.hostname}:${window.location.port || 3001}/ws`;
 const RECONNECT_DELAY = 3000;
 
 export function useWebSocket() {

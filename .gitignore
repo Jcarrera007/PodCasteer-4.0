@@ -1,5 +1,8 @@
 node_modules/
 dist/
+dist-electron/
+frontend/dist/
+backend-bundle/
 .env
 *.local
 .DS_Store
