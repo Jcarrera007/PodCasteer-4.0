@@ -46,13 +46,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "deleteAppDataOnUninstall": false,
-      "installerIcon": "electron/icon.png",
-      "uninstallerIcon": "electron/icon.png"
-    },
-    "mac": {
-      "target": "dmg",
-      "category": "public.app-category.utilities"
+      "deleteAppDataOnUninstall": false
     },
     "linux": {
       "target": "AppImage"

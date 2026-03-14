@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell.exe -Command \"Select-String -Pattern ''PodCasteer'' -Path ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\frontend\\\\dist\\\\assets\\\\*.js'' | Select-Object -First 5\")"
+      "Bash(powershell.exe -Command \"Select-String -Pattern ''PodCasteer'' -Path ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\frontend\\\\dist\\\\assets\\\\*.js'' | Select-Object -First 5\")",
+      "Bash(powershell.exe -Command \"Select-String -Pattern ''4\\\\.0'' -Path ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\frontend\\\\package.json'',''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\backend\\\\package.json'',''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\package.json'' | Select-Object Filename,LineNumber,Line\")",
+      "Bash(powershell.exe -Command \"Select-String -Pattern ''PodCasteer 4'' -Path ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\backend-bundle\\\\server.cjs'' | Select-Object -First 5\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\dist-electron'' | Select-Object Name, LastWriteTime\")",
+      "Bash(powershell.exe -Command \"Get-Content ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\dist-electron\\\\win-unpacked\\\\resources\\\\app\\\\frontend\\\\dist\\\\index.html''\")",
+      "Bash(powershell.exe -Command \"Get-Content ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\dist-electron\\\\win-unpacked\\\\resources\\\\app\\\\electron\\\\main.cjs'' | Select-String ''title|PodCasteer''\")",
+      "Bash(powershell.exe -Command \"Get-Content ''C:\\\\Users\\\\Zekki\\\\Desktop\\\\PodCasteer\\\\dist-electron\\\\win-unpacked\\\\resources\\\\app\\\\package.json''\")"
     ]
   }
 }
